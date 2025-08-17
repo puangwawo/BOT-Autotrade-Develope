@@ -1,0 +1,113 @@
+<https://botsignal.bitcoinwollangi.workers.dev>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CF Bot Dashboard</title>
+<style>
+  :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; }
+  body { margin: 24px; background: #0b0c10; color: #e6eef3; }
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:#12141a;border:1px solid #1f2230;border-radius:14px;padding:16px;box-shadow:0 1px 0 #0003}
+  .muted{color:#a9b4be}
+  .title{font-size:14px;margin:0 0 6px}
+  .value{font-size:24px;font-weight:700;margin:2px 0}
+  .ok{color:#5ee37d} .bad{color:#ff6b6b}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-bottom:1px solid #1f2230;text-align:left;font-size:14px}
+  th{color:#a9b4be;font-weight:600}
+  .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  input[type=text]{background:#0f1218;border:1px solid #293042;color:#e6eef3;border-radius:10px;padding:10px}
+  button{background:#2c7be5;border:0;color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer}
+  button.secondary{background:#293042}
+  a{color:#8fc7ff;text-decoration:none}
+</style>
+</head>
+<body>
+  <div class="controls">
+    <label class="muted">Worker URL:&nbsp;</label>
+    <input id="base" type="text" size="40" value="https://YOUR_WORKER_URL" />
+    <button id="refresh">Refresh</button>
+    <button id="autoref" class="secondary" title="Auto refresh setiap 30s">Auto 30s: Off</button>
+  </div>
+
+  <div class="row" id="summary">
+    <div class="card"><p class="title">Trades Closed</p><p class="value" id="v-closed">—</p></div>
+    <div class="card"><p class="title">PnL Total</p><p class="value" id="v-pnl">—</p></div>
+    <div class="card"><p class="title">Win Rate</p><p class="value" id="v-win">—</p></div>
+    <div class="card"><p class="title">Balance</p><p class="value" id="v-bal">—</p></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 style="margin:0">Trades</h3>
+      <div>
+        <button id="reloadTrades" class="secondary">Reload</button>
+        <a id="jsonTrades" target="_blank" class="muted" style="margin-left:8px">/trades (JSON)</a>
+      </div>
+    </div>
+    <table id="tbl">
+      <thead>
+        <tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>Exit</th><th>Status</th><th>R</th><th>PnL</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmtTime = ms => ms ? new Date(ms).toLocaleString() : "—";
+const fmt = n => (n==null)? "—" : (+n).toLocaleString(undefined,{maximumFractionDigits:6});
+const base = () => $('#base').value.replace(/\/+$/,'');
+const setText = (id, v, cls) => { const el=$(id); el.textContent=v; el.className=cls||""; };
+
+async function loadReport(){
+  const url = base() + '/report';
+  const r = await fetch(url); const j = await r.json();
+  setText('#v-closed', fmt(j.trades_closed));
+  const pnlCls = (j.pnl_total>0?'ok':(j.pnl_total<0?'bad':'')); setText('#v-pnl', fmt(j.pnl_total), pnlCls);
+  setText('#v-win', j.win_rate==null? '—' : (j.win_rate*100).toFixed(1) + '%');
+  setText('#v-bal', fmt(j.balance));
+}
+
+async function loadTrades(){
+  const url = base() + '/trades?limit=50';
+  $('#jsonTrades').href = url;
+  const r = await fetch(url); const j = await r.json();
+  const tbody = $('#tbl tbody'); tbody.innerHTML = '';
+  j.forEach(tr => {
+    const trEl = document.createElement('tr');
+    trEl.innerHTML = `
+      <td>${fmtTime(tr.closed_at || tr.opened_at)}</td>
+      <td>${tr.symbol}</td>
+      <td>${tr.side}</td>
+      <td>${fmt(tr.qty)}</td>
+      <td>${fmt(tr.entry)}</td>
+      <td>${fmt(tr.exit)}</td>
+      <td>${tr.status}</td>
+      <td>${fmt(tr.r)}</td>
+      <td class="${tr.pnl>0?'ok':(tr.pnl<0?'bad':'')}">${fmt(tr.pnl)}</td>
+    `;
+    tbody.appendChild(trEl);
+  });
+}
+
+async function refreshAll(){ await Promise.all([loadReport(), loadTrades()]); }
+
+$('#refresh').onclick = refreshAll;
+$('#reloadTrades').onclick = loadTrades;
+$('#autoref').onclick = (() => {
+  let on = false, timer = null;
+  return (e) => {
+    on = !on;
+    e.target.textContent = 'Auto 30s: ' + (on ? 'On' : 'Off');
+    if (on) { refreshAll(); timer = setInterval(refreshAll, 30000); }
+    else { clearInterval(timer); }
+  };
+})();
+
+// first load
+refreshAll();
+</script>
+</body>
+</html>
