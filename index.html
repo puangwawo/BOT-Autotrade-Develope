@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wunder Signal Bot · Paper Trading (Clean)</title>
+  <title>Wunder Signal Bot · Paper Trading (Start/Stop)</title>
   <style>
     :root {
       --bg: #121212;
@@ -17,77 +17,65 @@
       --border: #333;
     }
     * { box-sizing: border-box; }
-    body {
-      margin: 0; padding: 24px;
-      background: var(--bg); color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      display: flex; flex-direction: column; align-items: center;
-    }
-    .container {
-      width: min(920px, 92vw);
-      background: var(--panel);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 6px 14px rgba(0,0,0,.35);
-    }
-    h1 { margin: 0 0 12px; font-size: 22px; }
-    h2 { font-size: 16px; margin: 18px 0 10px; }
-    hr { border: 0; height: 1px; background: #2a2a2a; margin: 14px 0; }
+    body { margin:0; padding:24px; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; display:flex; flex-direction:column; align-items:center; }
+    .container { width:min(920px,92vw); background:var(--panel); border-radius:12px; padding:20px; box-shadow:0 6px 14px rgba(0,0,0,.35); }
+    h1 { margin:0 0 12px; font-size:22px; }
+    h2 { font-size:16px; margin:18px 0 10px; }
+    hr { border:0; height:1px; background:#2a2a2a; margin:14px 0; }
 
-    .grid { display: grid; gap: 12px; }
-    .grid.cols-2 { grid-template-columns: 1fr 1fr; }
-    .card {
-      background: #222; border: 1px solid #2c2c2c; border-radius: 10px; padding: 14px;
-    }
+    .grid { display:grid; gap:12px; }
+    .grid.cols-2 { grid-template-columns:1fr 1fr; }
+    .card { background:#222; border:1px solid #2c2c2c; border-radius:10px; padding:14px; }
 
-    .status { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
-    .badge {
-      padding: 8px 10px; border-radius: 8px; font-weight: 600; font-size: 13px;
-    }
-    .connected { background: var(--good); color: #fff; }
-    .disconnected { background: var(--bad); color: #fff; }
-    .idle { background: #2c2c2c; color: #fff; }
+    .status { display:grid; gap:8px; grid-template-columns:1fr 1fr; }
+    .badge { padding:8px 10px; border-radius:8px; font-weight:600; font-size:13px; }
+    .connected { background:var(--good); color:#fff; }
+    .disconnected { background:var(--bad); color:#fff; }
+    .idle { background:#2c2c2c; color:#fff; }
 
-    .metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-    .metric { background:#1a1a1a; border:1px solid #2a2a2a; border-radius: 8px; padding: 10px; }
-    .metric .k { color: var(--muted); font-size: 12px; }
-    .metric .v { font-size: 18px; font-weight: 700; }
+    .metrics { display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; }
+    .metric { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px; padding:10px; }
+    .metric .k { color:var(--muted); font-size:12px; }
+    .metric .v { font-size:18px; font-weight:700; }
 
-    .log-container {
-      height: 420px; background: #000; border: 1px solid #444; border-radius: 8px; overflow-y: auto; padding: 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
-      font-size: 13px; white-space: pre-wrap; line-height: 1.45;
-    }
-    .log-entry { padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px dashed #333; }
-    .buy { color: #2ecc71; }
-    .sell { color: #e74c3c; }
-    .info { color: var(--info); }
-    .warn { color: var(--warn); }
+    .log-container { height:420px; background:#000; border:1px solid #444; border-radius:8px; overflow-y:auto; padding:12px; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace; font-size:13px; white-space:pre-wrap; line-height:1.45; }
+    .log-entry { padding-bottom:6px; margin-bottom:6px; border-bottom:1px dashed #333; }
+    .buy { color:#2ecc71; } .sell { color:#e74c3c; } .info { color:var(--info); } .warn { color:var(--warn); }
 
-    label { display:block; font-weight: 700; margin: 8px 0 6px; font-size: 13px; }
-    input, select {
-      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #3a3a3a; background: #121212; color: #fff;
-    }
-    .muted { color: var(--muted); font-size: 13px; }
-    .small { font-size: 12px; }
-    .row { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
-    .row > * { flex: 1 1 auto; }
-    .pill { padding: 6px 10px; background:#232323; color:#ddd; border:1px solid #333; border-radius:999px; font-size:12px; }
+    label { display:block; font-weight:700; margin:8px 0 6px; font-size:13px; }
+    input, select { width:100%; padding:10px 12px; border-radius:8px; border:1px solid #3a3a3a; background:#121212; color:#fff; }
+    .muted { color:var(--muted); font-size:13px; }
+    .small { font-size:12px; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .row > * { flex:1 1 auto; }
+    .pill { padding:6px 10px; background:#232323; color:#ddd; border:1px solid #333; border-radius:999px; font-size:12px; }
+
+    .btn { border: 1px solid #2f2f2f; background:#232323; color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .btn-primary { background:#2b5bd7; border-color:#2b5bd7; }
+    .btn-danger { background:#a33131; border-color:#a33131; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Wunder Signal Bot · Paper Trading (Clean)</h1>
+    <h1>Wunder Signal Bot · Paper Trading (Start/Stop)</h1>
 
     <div class="status">
       <div id="status-binance" class="badge disconnected">Binance: Disconnected</div>
       <div id="status-notify" class="badge idle">Notify: Idle</div>
     </div>
 
+    <div class="row" id="controls" style="margin-top:12px;">
+      <button id="btn-start" class="btn btn-primary">Start</button>
+      <button id="btn-stop" class="btn btn-danger" disabled>Stop</button>
+    </div>
+
     <div class="card" style="margin-top:12px;">
       <div class="metrics">
         <div class="metric"><div class="k">Equity</div><div class="v" id="m-equity">—</div></div>
         <div class="metric"><div class="k">Open Position</div><div class="v" id="m-pos">None</div></div>
+        <div class="metric"><div class="k">Open PnL</div><div class="v" id="m-openpnl">—</div></div>
+        <div class="metric"><div class="k">Realized PnL</div><div class="v" id="m-realized">—</div></div>
         <div class="metric"><div class="k">Last PnL</div><div class="v" id="m-lastpnl">—</div></div>
         <div class="metric"><div class="k">Trades</div><div class="v" id="m-trades">0</div></div>
         <div class="metric"><div class="k">Win Rate</div><div class="v" id="m-winrate">—</div></div>
@@ -97,7 +85,7 @@
     <div class="grid cols-2" style="margin-top:12px;">
       <div class="card">
         <h2>Konfigurasi (Tampilan)</h2>
-        <p class="muted">⚠️ <b>Jangan taruh token/secrets di browser.</b> Untuk notifikasi Telegram gunakan endpoint server-side (mis. Vercel) dan simpan token di Environment Variable.</p>
+        <p class="muted">⚠️ <b>Jangan taruh token/secrets di browser.</b> Untuk notifikasi, gunakan endpoint server-side (mis. Vercel) dan simpan token di Environment Variable.</p>
         <label>Pair</label>
         <input id="cfg-symbol" value="BTCUSDT" />
         <label>Interval</label>
@@ -123,7 +111,7 @@
         <hr />
         <label>Server Notify Endpoint (POST)</label>
         <input id="cfg-endpoint" value="/api/notify" />
-        <p class="muted small">Format body yang dikirim: { chat_id, text, parse_mode? } · Implementasi contoh ada di komentar kode.</p>
+        <p class="muted small">Body: { chat_id, text, parse_mode? } · Implementasi contoh ada di komentar kode.</p>
       </div>
       <div class="card">
         <h2>Log Sinyal & Perdagangan</h2>
@@ -169,6 +157,8 @@
       sNotify: document.getElementById('status-notify'),
       mEquity: document.getElementById('m-equity'),
       mPos: document.getElementById('m-pos'),
+      mOpenPnL: document.getElementById('m-openpnl'),
+      mRealized: document.getElementById('m-realized'),
       mLastPnL: document.getElementById('m-lastpnl'),
       mTrades: document.getElementById('m-trades'),
       mWinRate: document.getElementById('m-winrate'),
@@ -183,9 +173,10 @@
       cfgSl: document.getElementById('cfg-sl'),
       cfgTp: document.getElementById('cfg-tp'),
       cfgRisk: document.getElementById('cfg-risk'),
+      btnStart: document.getElementById('btn-start'),
+      btnStop: document.getElementById('btn-stop'),
     };
 
-    // reflect config to UI small badges
     function reflectConfig() {
       el.cfgSymbol.value = config.symbol;
       el.cfgInterval.value = config.interval;
@@ -210,12 +201,8 @@
       el.log.scrollTop = el.log.scrollHeight;
     }
 
-    function setBadge(node, text, cls) {
-      node.textContent = text; node.className = `badge ${cls}`;
-    }
-
+    function setBadge(node, text, cls) { node.textContent = text; node.className = `badge ${cls}`; }
     function fmt(n, d=2) { return Number(n).toFixed(d); }
-
     function intervalToMs(iv) {
       const m = String(iv).match(/^(\d+)([mhd])$/);
       if (!m) return 300000;
@@ -230,71 +217,43 @@
       const out = Array(data.length).fill(NaN);
       if (data.length < period) return out;
       let sum = 0;
-      for (let i=0;i<data.length;i++) {
-        sum += data[i];
-        if (i >= period) sum -= data[i-period];
-        if (i >= period-1) out[i] = sum/period;
-      }
+      for (let i=0;i<data.length;i++) { sum += data[i]; if (i >= period) sum -= data[i-period]; if (i >= period-1) out[i] = sum/period; }
       return out;
     }
-
     function emaAligned(data, period) {
       const out = Array(data.length).fill(NaN);
       if (data.length < period) return out;
       const k = 2 / (period + 1);
-      let sum = 0;
-      for (let i=0;i<period;i++) sum += data[i];
-      out[period-1] = sum/period; // seed via SMA
+      let sum = 0; for (let i=0;i<period;i++) sum += data[i];
+      out[period-1] = sum/period;
       for (let i=period;i<data.length;i++) out[i] = (data[i]-out[i-1])*k + out[i-1];
       return out;
     }
-
     function atrAligned(klines, period) {
-      const len = klines.length;
-      const tr = Array(len).fill(NaN);
+      const len = klines.length; const tr = Array(len).fill(NaN);
       for (let i=1;i<len;i++) {
-        const high = +klines[i][2], low = +klines[i][3], prevClose = +klines[i-1][4];
-        const tr1 = high - low;
-        const tr2 = Math.abs(high - prevClose);
-        const tr3 = Math.abs(low - prevClose);
-        tr[i] = Math.max(tr1, tr2, tr3);
+        const high=+klines[i][2], low=+klines[i][3], prevClose=+klines[i-1][4];
+        const tr1=high-low, tr2=Math.abs(high-prevClose), tr3=Math.abs(low-prevClose);
+        tr[i] = Math.max(tr1,tr2,tr3);
       }
       return emaAligned(tr, period);
     }
-
     function bodyFraction(open, close, high, low) {
-      const body = Math.abs(close - open);
-      const range = Math.max(1e-9, high - low);
-      return body / range;
+      const body = Math.abs(close - open); const range = Math.max(1e-9, high - low); return body / range;
     }
 
     // =============================================================
     //  NOTIFY (server-side relay)
-    //  Implement example (Vercel):
-    //  export default async function handler(req,res){
-    //    const { chat_id, text, parse_mode } = req.body;
-    //    const token = process.env.TELEGRAM_BOT_TOKEN;
-    //    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
-    //      method:'POST', headers:{'Content-Type':'application/json'},
-    //      body: JSON.stringify({ chat_id, text, parse_mode: parse_mode||'HTML' })
-    //    }); const j = await r.json(); res.status(200).json(j);
-    //  }
     // =============================================================
     async function sendNotify(text) {
       if (!config.notify.enabled) return;
       try {
         setBadge(el.sNotify, 'Notify: Sending…', 'connected');
-        const r = await fetch(config.notify.endpoint, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: config.notify.chatId, text, parse_mode: 'HTML' })
-        });
+        const r = await fetch(config.notify.endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ chat_id: config.notify.chatId, text, parse_mode:'HTML' }) });
         const j = await r.json().catch(()=>({}));
         if (r.ok) { setBadge(el.sNotify, 'Notify: Sent', 'connected'); log('Notifikasi terkirim.', 'info'); }
         else { setBadge(el.sNotify, 'Notify: Error', 'disconnected'); log('Gagal kirim notifikasi: ' + (j.description||r.statusText), 'warn'); }
-      } catch (e) {
-        setBadge(el.sNotify, 'Notify: Error', 'disconnected');
-        log('Notify error: ' + e.message, 'warn');
-      }
+      } catch (e) { setBadge(el.sNotify, 'Notify: Error', 'disconnected'); log('Notify error: ' + e.message, 'warn'); }
     }
 
     // =============================================================
@@ -304,20 +263,23 @@
     let position = null; // { side, entry, sl, tp, size, openedAt }
     let trades = 0, wins = 0, lastPnL = null, cooldown = 0;
     let lastAlertOpenTime = 0; // dedup per candle
+    let timer = null, isRunning = false, lastPrice = null;
 
     function updateMetrics() {
+      const realized = equity - config.initialEquity;
+      const openPnL = (position && lastPrice!=null) ? ((position.side==='long' ? (lastPrice - position.entry) : (position.entry - lastPrice)) * position.size) : null;
       el.mEquity.textContent = '$' + fmt(equity, 2);
       el.mPos.textContent = position ? `${position.side.toUpperCase()} @ ${fmt(position.entry)}` : 'None';
-      el.mLastPnL.textContent = lastPnL==null ? '—' : ( (lastPnL>=0?'+':'') + fmt(lastPnL) );
+      el.mOpenPnL.textContent = openPnL==null ? '—' : ((openPnL>=0?'+':'') + fmt(openPnL));
+      el.mRealized.textContent = (realized>=0?'+':'') + fmt(realized);
+      el.mLastPnL.textContent = lastPnL==null ? '—' : ((lastPnL>=0?'+':'') + fmt(lastPnL));
       el.mTrades.textContent = String(trades);
       el.mWinRate.textContent = trades ? fmt((wins/trades)*100,1)+'%' : '—';
     }
 
     function openPosition(side, entry, atr, openTime) {
-      const sl = side === 'long' ? entry - config.slMultiplier * atr
-                                 : entry + config.slMultiplier * atr;
-      const tp = side === 'long' ? entry + config.tpMultiplier * atr
-                                 : entry - config.tpMultiplier * atr;
+      const sl = side === 'long' ? entry - config.slMultiplier * atr : entry + config.slMultiplier * atr;
+      const tp = side === 'long' ? entry + config.tpMultiplier * atr : entry - config.tpMultiplier * atr;
       const riskPerUnit = Math.max(1e-9, Math.abs(entry - sl));
       const size = Math.max(0, (equity * config.riskPct) / riskPerUnit);
       position = { side, entry, sl, tp, size, openedAt: openTime };
@@ -329,13 +291,8 @@
       if (!position) return;
       const { side, sl, tp, entry, size } = position;
       let exit = null, reason = '';
-      if (side === 'long') {
-        if (candleLow <= sl) { exit = sl; reason = 'SL'; }
-        else if (candleHigh >= tp) { exit = tp; reason = 'TP'; }
-      } else {
-        if (candleHigh >= sl) { exit = sl; reason = 'SL'; }
-        else if (candleLow <= tp) { exit = tp; reason = 'TP'; }
-      }
+      if (side === 'long') { if (candleLow <= sl) { exit = sl; reason='SL'; } else if (candleHigh >= tp) { exit = tp; reason='TP'; } }
+      else { if (candleHigh >= sl) { exit = sl; reason='SL'; } else if (candleLow <= tp) { exit = tp; reason='TP'; } }
       if (exit !== null) {
         const pnl = (side === 'long' ? (exit - entry) : (entry - exit)) * size;
         equity += pnl; lastPnL = pnl; trades += 1; if (pnl>0) wins += 1;
@@ -348,136 +305,91 @@
     //  SIGNALS
     // =============================================================
     function detectSignals(klines, emaFastArr, emaSlowArr, volSmaArr, atrArr, lastIndex) {
-      const prevIndex = lastIndex - 1;
-      if (prevIndex < 1) return { buy:false, sell:false, info:{} };
-
-      const open = +klines[lastIndex][1], close = +klines[lastIndex][4];
-      const high = +klines[lastIndex][2], low = +klines[lastIndex][3];
-      const pOpen = +klines[prevIndex][1], pClose = +klines[prevIndex][4];
-      const volume = +klines[lastIndex][5];
-
-      const ef = emaFastArr[lastIndex];
-      const es = emaSlowArr[lastIndex];
+      const prevIndex = lastIndex - 1; if (prevIndex < 1) return { buy:false, sell:false, info:{} };
+      const open=+klines[lastIndex][1], close=+klines[lastIndex][4];
+      const high=+klines[lastIndex][2], low=+klines[lastIndex][3];
+      const pOpen=+klines[prevIndex][1], pClose=+klines[prevIndex][4];
+      const volume=+klines[lastIndex][5];
+      const ef=emaFastArr[lastIndex], es=emaSlowArr[lastIndex];
       const ef_look = emaFastArr[lastIndex - Math.min(config.slopeLookback, lastIndex)];
-      const slopeFast = ef - ef_look;
-      const atr = atrArr[lastIndex];
-      const avgV = volSmaArr[lastIndex];
-
-      const currBody = bodyFraction(open, close, high, low);
-      const pHigh = +klines[prevIndex][2], pLow = +klines[prevIndex][3];
-      const prevBody = bodyFraction(pOpen, pClose, pHigh, pLow);
-
+      const slopeFast = ef - ef_look; const atr=atrArr[lastIndex]; const avgV=volSmaArr[lastIndex];
+      const currBody=bodyFraction(open,close,high,low); const pHigh=+klines[prevIndex][2], pLow=+klines[prevIndex][3];
+      const prevBody=bodyFraction(pOpen,pClose,pHigh,pLow);
       const strongBodies = currBody > config.minBodyCurr && prevBody > config.minBodyPrev;
       const bullEngulf = strongBodies && pClose < pOpen && close > open && close > pOpen && open < pClose;
       const bearEngulf = strongBodies && pClose > pOpen && close < open && close < pOpen && open > pClose;
-
       const volSpike = Number.isFinite(avgV) && volume > avgV * config.volumeMultiplier;
-      const emaSpread = Math.abs(ef - es);
-      const inChop = Number.isFinite(atr) && emaSpread < config.emaChopAtrFactor * atr;
-
-      const emaUp = ef > es && slopeFast > 0;
-      const emaDown = ef < es && slopeFast < 0;
-
-      const buy = !inChop && volSpike && emaUp && bullEngulf;
-      const sell = !inChop && volSpike && emaDown && bearEngulf;
-
+      const emaSpread = Math.abs(ef - es); const inChop = Number.isFinite(atr) && emaSpread < config.emaChopAtrFactor * atr;
+      const emaUp = ef > es && slopeFast > 0; const emaDown = ef < es && slopeFast < 0;
+      const buy = !inChop && volSpike && emaUp && bullEngulf; const sell = !inChop && volSpike && emaDown && bearEngulf;
       return { buy, sell, info: { ef, es, slopeFast, atr, avgV, volSpike, inChop, bullEngulf, bearEngulf } };
     }
 
     // =============================================================
     //  MAIN LOOP
     // =============================================================
-    let timer = null;
-
     async function processCandles() {
       try {
         const symbol = config.symbol.toUpperCase();
         const url = `${config.binanceTestnetApiUrl}/klines?symbol=${symbol}&interval=${config.interval}&limit=500`;
-        const r = await fetch(url);
-        if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
-        const klines = await r.json();
-        setBadge(el.sBinance, 'Binance: Connected', 'connected');
-
-        // arrays
-        const closes = klines.map(k=>+k[4]);
-        const volumes = klines.map(k=>+k[5]);
+        const r = await fetch(url); if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+        const klines = await r.json(); setBadge(el.sBinance, 'Binance: Connected', 'connected');
+        const closes = klines.map(k=>+k[4]); const volumes = klines.map(k=>+k[5]);
         const emaFastArr = emaAligned(closes, config.emaFastPeriod);
         const emaSlowArr = emaAligned(closes, config.emaSlowPeriod);
         const volSmaArr  = smaAligned(volumes, config.volumeSmaPeriod);
         const atrArr     = atrAligned(klines, config.atrPeriod);
-
-        const lastIndex = klines.length - 2; // use closed bar
-        if (lastIndex < Math.max(config.emaSlowPeriod, config.atrPeriod, config.volumeSmaPeriod)) {
-          log('Data belum cukup untuk indikator.', 'warn');
-          return;
-        }
-
-        // EXIT CHECK on current closed candle (simulate intra-bar hit)
-        const cHigh = +klines[lastIndex][2];
-        const cLow  = +klines[lastIndex][3];
-        const cClose= +klines[lastIndex][4];
+        const lastIndex = klines.length - 2; // closed bar
+        if (lastIndex < Math.max(config.emaSlowPeriod, config.atrPeriod, config.volumeSmaPeriod)) { log('Data belum cukup untuk indikator.', 'warn'); return; }
+        const cHigh=+klines[lastIndex][2], cLow=+klines[lastIndex][3], cClose=+klines[lastIndex][4];
         checkExit(cHigh, cLow, cClose);
-
-        // COOLDOWN
         if (cooldown > 0) { cooldown -= 1; }
-
-        // SIGNALS
         const { buy, sell, info } = detectSignals(klines, emaFastArr, emaSlowArr, volSmaArr, atrArr, lastIndex);
         const openTime = klines[lastIndex][0];
-
         log(`Check ${symbol} ${config.interval} @ ${new Date(openTime).toLocaleString()} | Price ${fmt(cClose)} | EF ${fmt(info.ef)} ES ${fmt(info.es)} ATR ${fmt(info.atr)}`);
-
         if (!position && cooldown===0) {
           if (buy) {
             openPosition('long', cClose, info.atr, openTime);
-            if (openTime !== lastAlertOpenTime) {
-              lastAlertOpenTime = openTime;
-              sendNotify(
-                `<b>🟢 BUY</b> ${symbol} ${config.interval}\nEntry: <b>${fmt(cClose)}</b>\nEF:${fmt(info.ef)} ES:${fmt(info.es)} ATR:${fmt(info.atr)}\nCond: Engulfing+VolSpike+EMAUp`
-              );
-            }
+            if (openTime !== lastAlertOpenTime) { lastAlertOpenTime = openTime; sendNotify(`<b>🟢 BUY</b> ${symbol} ${config.interval}\nEntry: <b>${fmt(cClose)}</b>\nEF:${fmt(info.ef)} ES:${fmt(info.es)} ATR:${fmt(info.atr)}\nCond: Engulfing+VolSpike+EMAUp`); }
           } else if (sell) {
             openPosition('short', cClose, info.atr, openTime);
-            if (openTime !== lastAlertOpenTime) {
-              lastAlertOpenTime = openTime;
-              sendNotify(
-                `<b>🔴 SELL</b> ${symbol} ${config.interval}\nEntry: <b>${fmt(cClose)}</b>\nEF:${fmt(info.ef)} ES:${fmt(info.es)} ATR:${fmt(info.atr)}\nCond: Engulfing+VolSpike+EMADown`
-              );
-            }
-          } else {
-            log('Tidak ada sinyal (filter aktif).');
-          }
+            if (openTime !== lastAlertOpenTime) { lastAlertOpenTime = openTime; sendNotify(`<b>🔴 SELL</b> ${symbol} ${config.interval}\nEntry: <b>${fmt(cClose)}</b>\nEF:${fmt(info.ef)} ES:${fmt(info.es)} ATR:${fmt(info.atr)}\nCond: Engulfing+VolSpike+EMADown`); }
+          } else { log('Tidak ada sinyal (filter aktif).'); }
         }
-
-        updateMetrics();
+        lastPrice = cClose; updateMetrics();
       } catch (e) {
-        setBadge(el.sBinance, 'Binance: Error', 'disconnected');
-        log('Error: ' + e.message, 'warn');
+        setBadge(el.sBinance, 'Binance: Error', 'disconnected'); log('Error: ' + e.message, 'warn');
       }
     }
 
-    function restartLoop() {
-      if (timer) clearInterval(timer);
+    function startLoop() {
+      if (isRunning) return;
       const ms = intervalToMs(config.interval);
       processCandles();
       timer = setInterval(processCandles, ms);
+      isRunning = true; el.btnStart.disabled = true; el.btnStop.disabled = false;
       log(`Loop dimulai. Interval ${config.interval} (${ms/1000}s).`);
+    }
+    function stopLoop() {
+      if (!isRunning) return;
+      clearInterval(timer); timer = null; isRunning = false;
+      el.btnStart.disabled = false; el.btnStop.disabled = true;
+      setBadge(el.sBinance, 'Binance: Idle', 'idle');
+      log('Loop dihentikan.');
     }
 
     // =============================================================
     //  INIT & UI EVENTS
     // =============================================================
     document.addEventListener('DOMContentLoaded', () => {
-      reflectConfig();
-      updateMetrics();
-      log('Bot siap. Menggunakan candle tertutup (no look-ahead).');
-      restartLoop();
-
+      reflectConfig(); updateMetrics();
+      log('Bot siap. Menggunakan candle tertutup (no look-ahead). Klik Start untuk mulai.');
       el.cfgSymbol.addEventListener('change', () => { config.symbol = el.cfgSymbol.value.trim().toUpperCase(); log('Symbol diubah ke ' + config.symbol); });
-      el.cfgInterval.addEventListener('change', () => { config.interval = el.cfgInterval.value; log('Interval diubah ke ' + config.interval); restartLoop(); });
+      el.cfgInterval.addEventListener('change', () => { config.interval = el.cfgInterval.value; log('Interval diubah ke ' + config.interval); if (isRunning) { stopLoop(); startLoop(); } });
       el.cfgEndpoint.addEventListener('change', () => { config.notify.endpoint = el.cfgEndpoint.value.trim() || '/api/notify'; log('Notify endpoint: ' + config.notify.endpoint); });
+      el.btnStart.addEventListener('click', startLoop);
+      el.btnStop.addEventListener('click', stopLoop);
     });
   </script>
 </body>
 </html>
-
