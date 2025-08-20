@@ -65,13 +65,29 @@
         </div>
         <div class="col">
           <label>Risk per Trade (%)</label>
-          <input id="riskPct" type="number" value="5"/>
+          <input id="riskPct" type="number" value="2"/>
         </div>
         <div class="col">
           <label>ATR SL / TP (x)</label>
-          <input id="atrMult" type="text" value="0.7,1.0,2.0"/>
-          <div class="hint">Format: SLx,TP1x,TP2x — contoh 0.7,1,2</div>
+          <input id="atrMult" type="text" value="0.8,1.2,2.5"/>
+          <div class="hint">Format: SLx,TP1x,TP2x — contoh 0.8,1.2,2.5</div>
         </div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div class="col">
+          <label>Long Only</label>
+          <select id="longOnly"><option value="true" selected>Yes</option><option value="false">No</option></select>
+        </div>
+        <div class="col">
+          <label>Fees (bps, entry+exit)</label>
+          <input id="feeBps" type="number" value="10"/>
+        </div>
+        <div class="col">
+          <label>Min Stop % (floor)</label>
+          <input id="minStopPct" type="number" value="0.2"/>
+          <div class="hint">Dipakai jika ATR terlalu kecil (memecoin)</div>
+        </div>
+      </div>
       </div>
       <div class="row" style="margin-top:10px">
         <div class="col"><button id="startBtn" class="primary">▶ Start Backtest (to latest)</button></div>
@@ -187,7 +203,10 @@ function backtest(candles, sigs, cfg){
   let eq = [balance];
   let trades = [];
   let pos = null; // {side, entry, qty, sl, tp1, tp2, iOpen}
-  const {slx, tp1x, tp2x, riskPct} = cfg;
+  const {slx, tp1x, tp2x, riskPct, longOnly, feeBps, minStopPct} = cfg;
+  const feeRate = (feeBps||0)/10000; // 10 bps = 0.1%
+  let lastTradeBar = -9999;
+  const cooldownBars = 10; // hindari overtrade
 
   for(let i=1;i<candles.length;i++){
     const cPrev=candles[i-1], c=candles[i];
@@ -199,10 +218,12 @@ function backtest(candles, sigs, cfg){
         const hitTP1 = c.high >= pos.tp1;
         if(hitSL || hitTP2 || hitTP1){
           const exit = hitSL? pos.sl : (hitTP2? pos.tp2 : pos.tp1);
-          const pl = (exit - pos.entry) * pos.qty;
+          let pl = (exit - pos.entry) * pos.qty;
+          const fees = (pos.entry*pos.qty + exit*pos.qty)*feeRate;
+          pl -= fees;
           balance += pl;
           trades.push({ iClose:i, iOpen:pos.iOpen, time:c.closeTime, side:pos.side, entry:pos.entry, exit, qty:pos.qty, sl:pos.sl, tp1:pos.tp1, tp2:pos.tp2, pl });
-          pos=null;
+          pos=null; lastTradeBar=i;
         }
       } else {
         const hitSL = c.high >= pos.sl;
@@ -210,13 +231,52 @@ function backtest(candles, sigs, cfg){
         const hitTP1 = c.low <= pos.tp1;
         if(hitSL || hitTP2 || hitTP1){
           const exit = hitSL? pos.sl : (hitTP2? pos.tp2 : pos.tp1);
-          const pl = (pos.entry - exit) * pos.qty;
+          let pl = (pos.entry - exit) * pos.qty;
+          const fees = (pos.entry*pos.qty + exit*pos.qty)*feeRate;
+          pl -= fees;
           balance += pl;
           trades.push({ iClose:i, iOpen:pos.iOpen, time:c.closeTime, side:pos.side, entry:pos.entry, exit, qty:pos.qty, sl:pos.sl, tp1:pos.tp1, tp2:pos.tp2, pl });
-          pos=null;
+          pos=null; lastTradeBar=i;
         }
       }
     }
+
+    // New signals only if flat
+    if(!pos && sigs[i].type && sigs[i].atr){
+      if(longOnly && sigs[i].type==='short'){ eq.push(balance); continue; }
+      if(i - lastTradeBar < cooldownBars){ eq.push(balance); continue; }
+      const entry = candles[i].close;
+      const riskDollar = balance * (riskPct/100);
+      const atrRaw = sigs[i].atr;
+      const atrEff = Math.max(atrRaw||0, entry*minStopPct); // floor utk memecoin
+      if(!atrEff || atrEff<=0) { eq.push(balance); continue; }
+      if(sigs[i].type==='long'){
+        const sl = entry - atrEff*slx; const tp1 = entry + atrEff*tp1x; const tp2 = entry + atrEff*tp2x;
+        const stopDist = Math.max(entry - sl, entry*minStopPct);
+        const qty = riskDollar / Math.max(stopDist, 1e-12);
+        pos = {side:'long', entry, qty, sl, tp1, tp2, iOpen:i};
+      } else {
+        const sl = entry + atrEff*slx; const tp1 = entry - atrEff*tp1x; const tp2 = entry - atrEff*tp2x;
+        const stopDist = Math.max(sl - entry, entry*minStopPct);
+        const qty = riskDollar / Math.max(stopDist, 1e-12);
+        pos = {side:'short', entry, qty, sl, tp1, tp2, iOpen:i};
+      }
+    }
+    const unreal = pos? (pos.side==='long'? (candles[i].close-pos.entry)*pos.qty : (pos.entry-candles[i].close)*pos.qty) : 0;
+    eq.push(balance + unreal);
+  }
+
+  // Close any open at last close
+  if(pos){
+    const last = candles[candles.length-1];
+    const exit = last.close; let pl = (pos.side==='long')? (exit-pos.entry)*pos.qty : (pos.entry-exit)*pos.qty;
+    const fees = (pos.entry*pos.qty + exit*pos.qty)*feeRate; pl -= fees;
+    balance += pl; trades.push({ iClose:candles.length-1, iOpen:pos.iOpen, time:last.closeTime, side:pos.side, entry:pos.entry, exit, qty:pos.qty, sl:pos.sl, tp1:pos.tp1, tp2:pos.tp2, pl }); pos=null;
+  }
+
+  const wins = trades.filter(t=>t.pl>0).length; const wr = trades.length? (wins/trades.length*100):0;
+  return {balance, equity:eq, trades, winRate:wr};
+}
 
     // New signals only if flat
     if(!pos && sigs[i].type && sigs[i].atr){
@@ -266,6 +326,7 @@ function drawChart(canvas, series){
 const els={
   symbol:document.getElementById('symbol'), interval:document.getElementById('interval'), strategy:document.getElementById('strategy'),
   initBalance:document.getElementById('initBalance'), riskPct:document.getElementById('riskPct'), atrMult:document.getElementById('atrMult'),
+  longOnly:document.getElementById('longOnly'), feeBps:document.getElementById('feeBps'), minStopPct:document.getElementById('minStopPct'),
   startBtn:document.getElementById('startBtn'), liveBtn:document.getElementById('liveBtn'), resetBtn:document.getElementById('resetBtn'),
   statBalance:document.getElementById('statBalance'), statPL:document.getElementById('statPL'), statWR:document.getElementById('statWR'), statTrades:document.getElementById('statTrades'),
   tradesTable:document.querySelector('#tradesTable tbody'), chart:document.getElementById('equityChart')
@@ -276,7 +337,8 @@ let liveTimer=null, lastState=null;
 function parseCfg(){
   const [slx,tp1x,tp2x] = els.atrMult.value.split(',').map(x=>+x.trim());
   return { symbol:els.symbol.value.trim().toUpperCase(), interval:els.interval.value, strategy:els.strategy.value,
-    initBalance:+els.initBalance.value, riskPct:+els.riskPct.value, slx, tp1x, tp2x };
+    initBalance:+els.initBalance.value, riskPct:+els.riskPct.value, slx, tp1x, tp2x,
+    longOnly:(els.longOnly.value==='true'), feeBps:+els.feeBps.value, minStopPct:+els.minStopPct.value/100 };
 }
 
 function render(trades, equity, balance, initBalance){
