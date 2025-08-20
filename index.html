@@ -1,395 +1,333 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wunder Signal Bot · Paper Trading (Start/Stop)</title>
+  <title>Wunder Paper Trader — Single HTML</title>
   <style>
-    :root {
-      --bg: #121212;
-      --panel: #1e1e1e;
-      --text: #e0e0e0;
-      --muted: #9aa0a6;
-      --good: #28a745;
-      --bad: #dc3545;
-      --info: #3498db;
-      --warn: #f39c12;
-      --border: #333;
-    }
-    * { box-sizing: border-box; }
-    body { margin:0; padding:24px; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; display:flex; flex-direction:column; align-items:center; }
-    .container { width:min(920px,92vw); background:var(--panel); border-radius:12px; padding:20px; box-shadow:0 6px 14px rgba(0,0,0,.35); }
-    h1 { margin:0 0 12px; font-size:22px; }
-    h2 { font-size:16px; margin:18px 0 10px; }
-    hr { border:0; height:1px; background:#2a2a2a; margin:14px 0; }
-
-    .grid { display:grid; gap:12px; }
-    .grid.cols-2 { grid-template-columns:1fr 1fr; }
-    .card { background:#222; border:1px solid #2c2c2c; border-radius:10px; padding:14px; }
-
-    .status { display:grid; gap:8px; grid-template-columns:1fr 1fr; }
-    .badge { padding:8px 10px; border-radius:8px; font-weight:600; font-size:13px; }
-    .connected { background:var(--good); color:#fff; }
-    .disconnected { background:var(--bad); color:#fff; }
-    .idle { background:#2c2c2c; color:#fff; }
-
-    .metrics { display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; }
-    .metric { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px; padding:10px; }
-    .metric .k { color:var(--muted); font-size:12px; }
-    .metric .v { font-size:18px; font-weight:700; }
-
-    .log-container { height:420px; background:#000; border:1px solid #444; border-radius:8px; overflow-y:auto; padding:12px; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace; font-size:13px; white-space:pre-wrap; line-height:1.45; }
-    .log-entry { padding-bottom:6px; margin-bottom:6px; border-bottom:1px dashed #333; }
-    .buy { color:#2ecc71; } .sell { color:#e74c3c; } .info { color:var(--info); } .warn { color:var(--warn); }
-
-    label { display:block; font-weight:700; margin:8px 0 6px; font-size:13px; }
-    input, select { width:100%; padding:10px 12px; border-radius:8px; border:1px solid #3a3a3a; background:#121212; color:#fff; }
-    .muted { color:var(--muted); font-size:13px; }
-    .small { font-size:12px; }
-    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .row > * { flex:1 1 auto; }
-    .pill { padding:6px 10px; background:#232323; color:#ddd; border:1px solid #333; border-radius:999px; font-size:12px; }
-
-    .btn { border: 1px solid #2f2f2f; background:#232323; color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; }
-    .btn:disabled { opacity:.5; cursor:not-allowed; }
-    .btn-primary { background:#2b5bd7; border-color:#2b5bd7; }
-    .btn-danger { background:#a33131; border-color:#a33131; }
+    :root{--bg:#0f1115;--panel:#171a21;--muted:#8b93a7;--text:#e6e9ef;--accent:#00e0a4;--danger:#ff5a71;--warn:#ffd166}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .card{background:var(--panel);border:1px solid #222534;border-radius:14px;padding:16px;box-shadow:0 6px 30px rgba(0,0,0,.25)}
+    h1{font-size:20px;margin:0 0 8px} h2{font-size:16px;margin:0 0 10px;color:var(--muted)}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1;min-width:260px}
+    label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
+    input,select,button{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a2f3d;background:#0f131a;color:var(--text)}
+    button{cursor:pointer;border:1px solid #2a2f3d;background:#111826;font-weight:600}
+    button.primary{background:linear-gradient(90deg,#00e0a4,#17d1ff);color:#001e1a;border:none}
+    button.ghost{background:#0f131a}
+    button.danger{background:#2b0f14;border-color:#45161e;color:#ff9aa9}
+    .grid{width:100%;border-collapse:collapse;font-size:12px}
+    .grid th,.grid td{border-bottom:1px solid #242a39;padding:8px 10px;text-align:right}
+    .grid th:first-child,.grid td:first-child{text-align:left}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px}
+    .pill.long{background:rgba(0,224,164,.13);color:#80ffd9}
+    .pill.short{background:rgba(255,90,113,.13);color:#ff9aa9}
+    .stats{display:flex;gap:16px;flex-wrap:wrap}
+    .stat{background:#0f131a;border:1px solid #21283a;border-radius:12px;padding:12px 14px;flex:1;min-width:120px}
+    .big{font-size:18px;font-weight:700}
+    canvas{width:100%;height:240px;background:#0b0e14;border:1px solid #222534;border-radius:10px}
+    .footer{color:#6c748a;font-size:12px;margin-top:10px}
+    .hint{color:#9aa3b2;font-size:12px}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Wunder Signal Bot · Paper Trading (Start/Stop)</h1>
-
-    <div class="status">
-      <div id="status-binance" class="badge disconnected">Binance: Disconnected</div>
-      <div id="status-notify" class="badge idle">Notify: Idle</div>
-    </div>
-
-    <div class="row" id="controls" style="margin-top:12px;">
-      <button id="btn-start" class="btn btn-primary">Start</button>
-      <button id="btn-stop" class="btn btn-danger" disabled>Stop</button>
-    </div>
-
-    <div class="card" style="margin-top:12px;">
-      <div class="metrics">
-        <div class="metric"><div class="k">Equity</div><div class="v" id="m-equity">—</div></div>
-        <div class="metric"><div class="k">Open Position</div><div class="v" id="m-pos">None</div></div>
-        <div class="metric"><div class="k">Open PnL</div><div class="v" id="m-openpnl">—</div></div>
-        <div class="metric"><div class="k">Realized PnL</div><div class="v" id="m-realized">—</div></div>
-        <div class="metric"><div class="k">Last PnL</div><div class="v" id="m-lastpnl">—</div></div>
-        <div class="metric"><div class="k">Trades</div><div class="v" id="m-trades">0</div></div>
-        <div class="metric"><div class="k">Win Rate</div><div class="v" id="m-winrate">—</div></div>
-      </div>
-    </div>
-
-    <div class="grid cols-2" style="margin-top:12px;">
-      <div class="card">
-        <h2>Konfigurasi (Tampilan)</h2>
-        <p class="muted">⚠️ <b>Jangan taruh token/secrets di browser.</b> Untuk notifikasi, gunakan endpoint server-side (mis. Vercel) dan simpan token di Environment Variable.</p>
-        <label>Pair</label>
-        <input id="cfg-symbol" value="BTCUSDT" />
-        <label>Interval</label>
-        <select id="cfg-interval">
-          <option value="1m">1m</option>
-          <option value="5m" selected>5m</option>
-          <option value="15m">15m</option>
-          <option value="1h">1h</option>
-          <option value="4h">4h</option>
-        </select>
-        <div class="row" style="margin-top:8px;">
-          <span class="pill small">EMA Fast: <b id="cfg-ef">50</b></span>
-          <span class="pill small">EMA Slow: <b id="cfg-es">200</b></span>
-          <span class="pill small">ATR: <b id="cfg-atr">14</b></span>
-          <span class="pill small">Vol SMA: <b id="cfg-vsma">20</b></span>
+  <div class="wrap">
+    <div class="card" style="margin-bottom:12px">
+      <h1>Wunder Paper Trader (Single HTML)</h1>
+      <div class="row">
+        <div class="col">
+          <label>Symbol (Binance)</label>
+          <input id="symbol" value="PEPEUSDT"/>
         </div>
-        <div class="row" style="margin-top:8px;">
-          <span class="pill small">Vol×: <b id="cfg-vmult">1.6</b></span>
-          <span class="pill small">SL×ATR: <b id="cfg-sl">1.5</b></span>
-          <span class="pill small">TP×ATR: <b id="cfg-tp">3.0</b></span>
-          <span class="pill small">Risk: <b id="cfg-risk">1%</b></span>
+        <div class="col">
+          <label>Timeframe</label>
+          <select id="interval">
+            <option value="1m">1m</option>
+            <option value="5m">5m</option>
+            <option value="15m" selected>15m</option>
+            <option value="30m">30m</option>
+            <option value="1h">1h</option>
+          </select>
         </div>
-        <hr />
-        <label>Server Notify Endpoint (POST)</label>
-        <input id="cfg-endpoint" value="/api/notify" />
-        <p class="muted small">Body: { chat_id, text, parse_mode? } · Implementasi contoh ada di komentar kode.</p>
+        <div class="col">
+          <label>Strategy</label>
+          <select id="strategy">
+            <option value="ema_rsi" selected>EMA Trend + RSI Pullback</option>
+            <option value="bounce24">Bounce 24h Low (reclaim)</option>
+            <option value="vol_break">Volume Spike Breakout</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Initial Balance (USDT)</label>
+          <input id="initBalance" type="number" value="1000"/>
+        </div>
+        <div class="col">
+          <label>Risk per Trade (%)</label>
+          <input id="riskPct" type="number" value="5"/>
+        </div>
+        <div class="col">
+          <label>ATR SL / TP (x)</label>
+          <input id="atrMult" type="text" value="0.7,1.0,2.0"/>
+          <div class="hint">Format: SLx,TP1x,TP2x — contoh 0.7,1,2</div>
+        </div>
       </div>
-      <div class="card">
-        <h2>Log Sinyal & Perdagangan</h2>
-        <div id="log" class="log-container"></div>
+      <div class="row" style="margin-top:10px">
+        <div class="col"><button id="startBtn" class="primary">▶ Start Backtest (to latest)</button></div>
+        <div class="col"><button id="liveBtn" class="ghost">⏱ Live Update (on/off)</button></div>
+        <div class="col"><button id="resetBtn" class="danger">⟲ Reset</button></div>
+      </div>
+      <div class="footer">Data dari <b>Binance public API (spot)</b>. Ini <b>paper trading</b> — tidak mengeksekusi order asli.</div>
+    </div>
+
+    <div class="row">
+      <div class="col card">
+        <h2>Equity Curve</h2>
+        <canvas id="equityChart"></canvas>
+      </div>
+      <div class="col card">
+        <h2>Stats</h2>
+        <div class="stats">
+          <div class="stat"><div class="hint">Balance</div><div class="big" id="statBalance">-</div></div>
+          <div class="stat"><div class="hint">P/L Total</div><div class="big" id="statPL">-</div></div>
+          <div class="stat"><div class="hint">Win Rate</div><div class="big" id="statWR">-</div></div>
+          <div class="stat"><div class="hint">Trades</div><div class="big" id="statTrades">-</div></div>
+        </div>
       </div>
     </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2>Trades</h2>
+      <table class="grid" id="tradesTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Time</th><th>Side</th><th>Entry</th><th>Exit</th><th>Qty</th><th>SL</th><th>TP1</th><th>TP2</th><th>P/L</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
   </div>
 
-  <script>
-    // =============================================================
-    //  CLEAN CORE CONFIG (no secrets in browser)
-    // =============================================================
-    const config = {
-      binanceTestnetApiUrl: 'https://testnet.binance.vision/api/v3',
-      symbol: 'BTCUSDT',
-      interval: '5m',
-      emaFastPeriod: 50,
-      emaSlowPeriod: 200,
-      volumeSmaPeriod: 20,
-      volumeMultiplier: 1.6, // 1.4–1.8 untuk 5m
-      atrPeriod: 14,
-      slMultiplier: 1.5,
-      tpMultiplier: 3.0,
-      // Filters
-      slopeLookback: 3,
-      emaChopAtrFactor: 0.20, // zona chop jika |EF-ES| < 0.2*ATR
-      minBodyCurr: 0.6,
-      minBodyPrev: 0.3,
-      // Paper trading
-      initialEquity: 10000,
-      riskPct: 0.01, // 1% per trade
-      cooldownBars: 2,
-      // Notifications
-      notify: { enabled: true, endpoint: '/api/notify', chatId: 'YOUR_CHAT_ID' },
-    };
+<script>
+// ===== Utils =====
+const sleep = (ms)=> new Promise(r=>setTimeout(r,ms));
+const fmt = (n, d=6)=> (typeof n==='number'? n.toFixed(d): n);
+function median(arr){const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2? s[m]:(s[m-1]+s[m])/2}
+function sma(arr, p){const out=[]; let sum=0; for(let i=0;i<arr.length;i++){sum+=arr[i]; if(i>=p) sum-=arr[i-p]; out.push(i>=p-1? sum/p:null)} return out}
+function ema(arr,p){const out=[]; const k=2/(p+1); let prev=null; for(let i=0;i<arr.length;i++){const v=arr[i]; if(v==null){out.push(prev); continue} prev= prev==null? v : (v - prev)*k + prev; out.push(prev)} return out}
+function rsi(arr, p=14){const out=[]; let up=0, dn=0, prev=arr[0]; for(let i=1;i<arr.length;i++){const ch=arr[i]-prev; prev=arr[i]; const u=Math.max(ch,0), d=Math.max(-ch,0); if(i<=p){ up+=u; dn+=d; out.push(null); if(i===p){ let rs= (up/p) / ((dn||1e-9)/p); out[out.length-1]= 100-100/(1+rs); }} else {
+  const last=out[out.length-1]; const avgUp=(( (last!=null? (100/(100-last)-1):0) * (dn||1e-9) )||0); // not used, keep classical
+  up=(up*(p-1)+u)/p; dn=(dn*(p-1)+d)/p; const rs= up / (dn||1e-9); out.push(100-100/(1+rs)); }
+  }
+  out.unshift(null); // align length
+  return out
+}
+function atr(high,low,close,p=14){const out=[]; let prevClose=close[0]; let trArr=[]; for(let i=0;i<close.length;i++){const h=high[i], l=low[i], c=close[i]; const tr = Math.max(h-l, Math.abs(h-prevClose), Math.abs(l-prevClose)); prevClose=c; trArr.push(tr); if(trArr.length<p){ out.push(null); } else if(trArr.length===p){ out.push(trArr.reduce((a,b)=>a+b,0)/p);} else { const prev=out[out.length-1]; out.push((prev*(p-1)+tr)/p);} }
+  return out
+}
 
-    // =============================================================
-    //  UI BINDINGS
-    // =============================================================
-    const el = {
-      log: document.getElementById('log'),
-      sBinance: document.getElementById('status-binance'),
-      sNotify: document.getElementById('status-notify'),
-      mEquity: document.getElementById('m-equity'),
-      mPos: document.getElementById('m-pos'),
-      mOpenPnL: document.getElementById('m-openpnl'),
-      mRealized: document.getElementById('m-realized'),
-      mLastPnL: document.getElementById('m-lastpnl'),
-      mTrades: document.getElementById('m-trades'),
-      mWinRate: document.getElementById('m-winrate'),
-      cfgSymbol: document.getElementById('cfg-symbol'),
-      cfgInterval: document.getElementById('cfg-interval'),
-      cfgEndpoint: document.getElementById('cfg-endpoint'),
-      cfgEf: document.getElementById('cfg-ef'),
-      cfgEs: document.getElementById('cfg-es'),
-      cfgAtr: document.getElementById('cfg-atr'),
-      cfgVsma: document.getElementById('cfg-vsma'),
-      cfgVmult: document.getElementById('cfg-vmult'),
-      cfgSl: document.getElementById('cfg-sl'),
-      cfgTp: document.getElementById('cfg-tp'),
-      cfgRisk: document.getElementById('cfg-risk'),
-      btnStart: document.getElementById('btn-start'),
-      btnStop: document.getElementById('btn-stop'),
-    };
+// ===== Binance fetch =====
+async function fetchKlines(symbol, interval, limit=1000){
+  const url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Binance API error');
+  const raw = await res.json();
+  return raw.map(r=>({
+    openTime:r[0], open: +r[1], high:+r[2], low:+r[3], close:+r[4], volume:+r[5], closeTime:r[6]
+  }))
+}
 
-    function reflectConfig() {
-      el.cfgSymbol.value = config.symbol;
-      el.cfgInterval.value = config.interval;
-      el.cfgEndpoint.value = config.notify.endpoint;
-      el.cfgEf.textContent = String(config.emaFastPeriod);
-      el.cfgEs.textContent = String(config.emaSlowPeriod);
-      el.cfgAtr.textContent = String(config.atrPeriod);
-      el.cfgVsma.textContent = String(config.volumeSmaPeriod);
-      el.cfgVmult.textContent = String(config.volumeMultiplier);
-      el.cfgSl.textContent = String(config.slMultiplier);
-      el.cfgTp.textContent = String(config.tpMultiplier);
-      el.cfgRisk.textContent = `${Math.round(config.riskPct*100)}%`;
-    }
+// ===== Strategies =====
+function signalsFromStrategy(candles, strat){
+  const close=candles.map(c=>c.close), high=candles.map(c=>c.high), low=candles.map(c=>c.low), vol=candles.map(c=>c.volume);
+  const ema50=ema(close,50), ema200=ema(close,200), rsi14=rsi(close,14), a14=atr(high,low,close,14);
+  const medVol50 = sma(vol,50).map((_,i)=> median(vol.slice(Math.max(0,i-49), i+1)) );
+  const dayWindow = 24*60; // minutes window, we will approximate by interval minutes
+  const intervalMs = (candles[1]?.closeTime - candles[0]?.closeTime) || 60_000;
+  const bars24h = Math.max(1, Math.round(24*60*60_000/intervalMs));
 
-    // simple logger
-    function log(message, type = 'info') {
-      const entry = document.createElement('div');
-      entry.className = `log-entry ${type}`;
-      const ts = new Date().toLocaleTimeString();
-      entry.textContent = `[${ts}] ${message}`;
-      el.log.appendChild(entry);
-      el.log.scrollTop = el.log.scrollHeight;
-    }
+  const sigs = candles.map((c,i)=>({i, time:c.closeTime, type:null, reason:null, atr:a14[i]}));
 
-    function setBadge(node, text, cls) { node.textContent = text; node.className = `badge ${cls}`; }
-    function fmt(n, d=2) { return Number(n).toFixed(d); }
-    function intervalToMs(iv) {
-      const m = String(iv).match(/^(\d+)([mhd])$/);
-      if (!m) return 300000;
-      const v = +m[1];
-      return m[2] === 'm' ? v*60_000 : m[2] === 'h' ? v*3_600_000 : v*86_400_000;
+  for(let i=1;i<candles.length;i++){
+    const upTrend = ema50[i] != null && ema200[i] != null && ema50[i] > ema200[i];
+    const dnTrend = ema50[i] != null && ema200[i] != null && ema50[i] < ema200[i];
+    if(strat==='ema_rsi'){
+      const crossUp = rsi14[i-1]!=null && rsi14[i-1] < 40 && rsi14[i] >= 40; // pullback ends
+      const crossDn = rsi14[i-1]!=null && rsi14[i-1] > 60 && rsi14[i] <= 60;
+      if(upTrend && crossUp && close[i] > ema50[i]) { sigs[i].type='long'; sigs[i].reason='EMA up + RSI↑40'; }
+      if(dnTrend && crossDn && close[i] < ema50[i]) { sigs[i].type='short'; sigs[i].reason='EMA down + RSI↓60'; }
     }
+    if(strat==='bounce24'){
+      const from = Math.max(0, i - bars24h);
+      const slice = candles.slice(from, i+1);
+      const low24 = Math.min(...slice.map(x=>x.low));
+      const prevCloseBelow = close[i-1] <= low24 * 1.0002; // touched/broke
+      const reclaim = close[i] > low24 && close[i] > close[i-1];
+      if(prevCloseBelow && reclaim) { sigs[i].type='long'; sigs[i].reason='24h Low reclaim'; }
+      const high24 = Math.max(...slice.map(x=>x.high));
+      const prevCloseAbove = close[i-1] >= high24 * 0.9998;
+      const reject = close[i] < high24 && close[i] < close[i-1];
+      if(prevCloseAbove && reject) { sigs[i].type='short'; sigs[i].reason='24h High reject'; }
+    }
+    if(strat==='vol_break'){
+      const vOK = medVol50[i]!=null && vol[i] > medVol50[i] * 1.6;
+      const bullBreak = close[i] > high[i-1] && vOK; if(bullBreak){ sigs[i].type='long'; sigs[i].reason='Break↑ + Vol spike'; }
+      const bearBreak = close[i] < low[i-1] && vOK; if(bearBreak){ sigs[i].type='short'; sigs[i].reason='Break↓ + Vol spike'; }
+    }
+  }
+  return {sigs, ema50, ema200, rsi14:a14, atr:a14};
+}
 
-    // =============================================================
-    //  INDICATORS (aligned arrays)
-    // =============================================================
-    function smaAligned(data, period) {
-      const out = Array(data.length).fill(NaN);
-      if (data.length < period) return out;
-      let sum = 0;
-      for (let i=0;i<data.length;i++) { sum += data[i]; if (i >= period) sum -= data[i-period]; if (i >= period-1) out[i] = sum/period; }
-      return out;
-    }
-    function emaAligned(data, period) {
-      const out = Array(data.length).fill(NaN);
-      if (data.length < period) return out;
-      const k = 2 / (period + 1);
-      let sum = 0; for (let i=0;i<period;i++) sum += data[i];
-      out[period-1] = sum/period;
-      for (let i=period;i<data.length;i++) out[i] = (data[i]-out[i-1])*k + out[i-1];
-      return out;
-    }
-    function atrAligned(klines, period) {
-      const len = klines.length; const tr = Array(len).fill(NaN);
-      for (let i=1;i<len;i++) {
-        const high=+klines[i][2], low=+klines[i][3], prevClose=+klines[i-1][4];
-        const tr1=high-low, tr2=Math.abs(high-prevClose), tr3=Math.abs(low-prevClose);
-        tr[i] = Math.max(tr1,tr2,tr3);
-      }
-      return emaAligned(tr, period);
-    }
-    function bodyFraction(open, close, high, low) {
-      const body = Math.abs(close - open); const range = Math.max(1e-9, high - low); return body / range;
-    }
+// ===== Paper engine =====
+function backtest(candles, sigs, cfg){
+  let balance = cfg.initBalance;
+  let eq = [balance];
+  let trades = [];
+  let pos = null; // {side, entry, qty, sl, tp1, tp2, iOpen}
+  const {slx, tp1x, tp2x, riskPct} = cfg;
 
-    // =============================================================
-    //  NOTIFY (server-side relay)
-    // =============================================================
-    async function sendNotify(text) {
-      if (!config.notify.enabled) return;
-      try {
-        setBadge(el.sNotify, 'Notify: Sending…', 'connected');
-        const r = await fetch(config.notify.endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ chat_id: config.notify.chatId, text, parse_mode:'HTML' }) });
-        const j = await r.json().catch(()=>({}));
-        if (r.ok) { setBadge(el.sNotify, 'Notify: Sent', 'connected'); log('Notifikasi terkirim.', 'info'); }
-        else { setBadge(el.sNotify, 'Notify: Error', 'disconnected'); log('Gagal kirim notifikasi: ' + (j.description||r.statusText), 'warn'); }
-      } catch (e) { setBadge(el.sNotify, 'Notify: Error', 'disconnected'); log('Notify error: ' + e.message, 'warn'); }
-    }
-
-    // =============================================================
-    //  PAPER TRADING ENGINE
-    // =============================================================
-    let equity = config.initialEquity;
-    let position = null; // { side, entry, sl, tp, size, openedAt }
-    let trades = 0, wins = 0, lastPnL = null, cooldown = 0;
-    let lastAlertOpenTime = 0; // dedup per candle
-    let timer = null, isRunning = false, lastPrice = null;
-
-    function updateMetrics() {
-      const realized = equity - config.initialEquity;
-      const openPnL = (position && lastPrice!=null) ? ((position.side==='long' ? (lastPrice - position.entry) : (position.entry - lastPrice)) * position.size) : null;
-      el.mEquity.textContent = '$' + fmt(equity, 2);
-      el.mPos.textContent = position ? `${position.side.toUpperCase()} @ ${fmt(position.entry)}` : 'None';
-      el.mOpenPnL.textContent = openPnL==null ? '—' : ((openPnL>=0?'+':'') + fmt(openPnL));
-      el.mRealized.textContent = (realized>=0?'+':'') + fmt(realized);
-      el.mLastPnL.textContent = lastPnL==null ? '—' : ((lastPnL>=0?'+':'') + fmt(lastPnL));
-      el.mTrades.textContent = String(trades);
-      el.mWinRate.textContent = trades ? fmt((wins/trades)*100,1)+'%' : '—';
-    }
-
-    function openPosition(side, entry, atr, openTime) {
-      const sl = side === 'long' ? entry - config.slMultiplier * atr : entry + config.slMultiplier * atr;
-      const tp = side === 'long' ? entry + config.tpMultiplier * atr : entry - config.tpMultiplier * atr;
-      const riskPerUnit = Math.max(1e-9, Math.abs(entry - sl));
-      const size = Math.max(0, (equity * config.riskPct) / riskPerUnit);
-      position = { side, entry, sl, tp, size, openedAt: openTime };
-      cooldown = config.cooldownBars;
-      log(`${side.toUpperCase()} OPEN @ ${fmt(entry)} | SL ${fmt(sl)} | TP ${fmt(tp)} | size ${fmt(size,4)}`, side==='long'?'buy':'sell');
-    }
-
-    function checkExit(candleHigh, candleLow, candleClose) {
-      if (!position) return;
-      const { side, sl, tp, entry, size } = position;
-      let exit = null, reason = '';
-      if (side === 'long') { if (candleLow <= sl) { exit = sl; reason='SL'; } else if (candleHigh >= tp) { exit = tp; reason='TP'; } }
-      else { if (candleHigh >= sl) { exit = sl; reason='SL'; } else if (candleLow <= tp) { exit = tp; reason='TP'; } }
-      if (exit !== null) {
-        const pnl = (side === 'long' ? (exit - entry) : (entry - exit)) * size;
-        equity += pnl; lastPnL = pnl; trades += 1; if (pnl>0) wins += 1;
-        log(`${side.toUpperCase()} EXIT @ ${fmt(exit)} [${reason}] | PnL: ${fmt(pnl)} | Equity: $${fmt(equity)}`);
-        position = null; updateMetrics();
-      }
-    }
-
-    // =============================================================
-    //  SIGNALS
-    // =============================================================
-    function detectSignals(klines, emaFastArr, emaSlowArr, volSmaArr, atrArr, lastIndex) {
-      const prevIndex = lastIndex - 1; if (prevIndex < 1) return { buy:false, sell:false, info:{} };
-      const open=+klines[lastIndex][1], close=+klines[lastIndex][4];
-      const high=+klines[lastIndex][2], low=+klines[lastIndex][3];
-      const pOpen=+klines[prevIndex][1], pClose=+klines[prevIndex][4];
-      const volume=+klines[lastIndex][5];
-      const ef=emaFastArr[lastIndex], es=emaSlowArr[lastIndex];
-      const ef_look = emaFastArr[lastIndex - Math.min(config.slopeLookback, lastIndex)];
-      const slopeFast = ef - ef_look; const atr=atrArr[lastIndex]; const avgV=volSmaArr[lastIndex];
-      const currBody=bodyFraction(open,close,high,low); const pHigh=+klines[prevIndex][2], pLow=+klines[prevIndex][3];
-      const prevBody=bodyFraction(pOpen,pClose,pHigh,pLow);
-      const strongBodies = currBody > config.minBodyCurr && prevBody > config.minBodyPrev;
-      const bullEngulf = strongBodies && pClose < pOpen && close > open && close > pOpen && open < pClose;
-      const bearEngulf = strongBodies && pClose > pOpen && close < open && close < pOpen && open > pClose;
-      const volSpike = Number.isFinite(avgV) && volume > avgV * config.volumeMultiplier;
-      const emaSpread = Math.abs(ef - es); const inChop = Number.isFinite(atr) && emaSpread < config.emaChopAtrFactor * atr;
-      const emaUp = ef > es && slopeFast > 0; const emaDown = ef < es && slopeFast < 0;
-      const buy = !inChop && volSpike && emaUp && bullEngulf; const sell = !inChop && volSpike && emaDown && bearEngulf;
-      return { buy, sell, info: { ef, es, slopeFast, atr, avgV, volSpike, inChop, bullEngulf, bearEngulf } };
-    }
-
-    // =============================================================
-    //  MAIN LOOP
-    // =============================================================
-    async function processCandles() {
-      try {
-        const symbol = config.symbol.toUpperCase();
-        const url = `${config.binanceTestnetApiUrl}/klines?symbol=${symbol}&interval=${config.interval}&limit=500`;
-        const r = await fetch(url); if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
-        const klines = await r.json(); setBadge(el.sBinance, 'Binance: Connected', 'connected');
-        const closes = klines.map(k=>+k[4]); const volumes = klines.map(k=>+k[5]);
-        const emaFastArr = emaAligned(closes, config.emaFastPeriod);
-        const emaSlowArr = emaAligned(closes, config.emaSlowPeriod);
-        const volSmaArr  = smaAligned(volumes, config.volumeSmaPeriod);
-        const atrArr     = atrAligned(klines, config.atrPeriod);
-        const lastIndex = klines.length - 2; // closed bar
-        if (lastIndex < Math.max(config.emaSlowPeriod, config.atrPeriod, config.volumeSmaPeriod)) { log('Data belum cukup untuk indikator.', 'warn'); return; }
-        const cHigh=+klines[lastIndex][2], cLow=+klines[lastIndex][3], cClose=+klines[lastIndex][4];
-        checkExit(cHigh, cLow, cClose);
-        if (cooldown > 0) { cooldown -= 1; }
-        const { buy, sell, info } = detectSignals(klines, emaFastArr, emaSlowArr, volSmaArr, atrArr, lastIndex);
-        const openTime = klines[lastIndex][0];
-        log(`Check ${symbol} ${config.interval} @ ${new Date(openTime).toLocaleString()} | Price ${fmt(cClose)} | EF ${fmt(info.ef)} ES ${fmt(info.es)} ATR ${fmt(info.atr)}`);
-        if (!position && cooldown===0) {
-          if (buy) {
-            openPosition('long', cClose, info.atr, openTime);
-            if (openTime !== lastAlertOpenTime) { lastAlertOpenTime = openTime; sendNotify(`<b>🟢 BUY</b> ${symbol} ${config.interval}\nEntry: <b>${fmt(cClose)}</b>\nEF:${fmt(info.ef)} ES:${fmt(info.es)} ATR:${fmt(info.atr)}\nCond: Engulfing+VolSpike+EMAUp`); }
-          } else if (sell) {
-            openPosition('short', cClose, info.atr, openTime);
-            if (openTime !== lastAlertOpenTime) { lastAlertOpenTime = openTime; sendNotify(`<b>🔴 SELL</b> ${symbol} ${config.interval}\nEntry: <b>${fmt(cClose)}</b>\nEF:${fmt(info.ef)} ES:${fmt(info.es)} ATR:${fmt(info.atr)}\nCond: Engulfing+VolSpike+EMADown`); }
-          } else { log('Tidak ada sinyal (filter aktif).'); }
+  for(let i=1;i<candles.length;i++){
+    const cPrev=candles[i-1], c=candles[i];
+    // Manage open position by SL/TP using candle extremes
+    if(pos){
+      if(pos.side==='long'){
+        const hitSL = c.low <= pos.sl;
+        const hitTP2 = c.high >= pos.tp2;
+        const hitTP1 = c.high >= pos.tp1;
+        if(hitSL || hitTP2 || hitTP1){
+          const exit = hitSL? pos.sl : (hitTP2? pos.tp2 : pos.tp1);
+          const pl = (exit - pos.entry) * pos.qty;
+          balance += pl;
+          trades.push({ iClose:i, iOpen:pos.iOpen, time:c.closeTime, side:pos.side, entry:pos.entry, exit, qty:pos.qty, sl:pos.sl, tp1:pos.tp1, tp2:pos.tp2, pl });
+          pos=null;
         }
-        lastPrice = cClose; updateMetrics();
-      } catch (e) {
-        setBadge(el.sBinance, 'Binance: Error', 'disconnected'); log('Error: ' + e.message, 'warn');
+      } else {
+        const hitSL = c.high >= pos.sl;
+        const hitTP2 = c.low <= pos.tp2;
+        const hitTP1 = c.low <= pos.tp1;
+        if(hitSL || hitTP2 || hitTP1){
+          const exit = hitSL? pos.sl : (hitTP2? pos.tp2 : pos.tp1);
+          const pl = (pos.entry - exit) * pos.qty;
+          balance += pl;
+          trades.push({ iClose:i, iOpen:pos.iOpen, time:c.closeTime, side:pos.side, entry:pos.entry, exit, qty:pos.qty, sl:pos.sl, tp1:pos.tp1, tp2:pos.tp2, pl });
+          pos=null;
+        }
       }
     }
 
-    function startLoop() {
-      if (isRunning) return;
-      const ms = intervalToMs(config.interval);
-      processCandles();
-      timer = setInterval(processCandles, ms);
-      isRunning = true; el.btnStart.disabled = true; el.btnStop.disabled = false;
-      log(`Loop dimulai. Interval ${config.interval} (${ms/1000}s).`);
+    // New signals only if flat
+    if(!pos && sigs[i].type && sigs[i].atr){
+      const entry = candles[i].close;
+      const riskDollar = balance * (riskPct/100);
+      const atr = sigs[i].atr;
+      if(!atr || atr<=0) { eq.push(balance); continue; }
+      if(sigs[i].type==='long'){
+        const sl = entry - atr*slx; const tp1 = entry + atr*tp1x; const tp2 = entry + atr*tp2x;
+        const stopDist = entry - sl; const qty = riskDollar / Math.max(stopDist, 1e-12);
+        pos = {side:'long', entry, qty, sl, tp1, tp2, iOpen:i};
+      } else {
+        const sl = entry + atr*slx; const tp1 = entry - atr*tp1x; const tp2 = entry - atr*tp2x;
+        const stopDist = sl - entry; const qty = riskDollar / Math.max(stopDist, 1e-12);
+        pos = {side:'short', entry, qty, sl, tp1, tp2, iOpen:i};
+      }
     }
-    function stopLoop() {
-      if (!isRunning) return;
-      clearInterval(timer); timer = null; isRunning = false;
-      el.btnStart.disabled = false; el.btnStop.disabled = true;
-      setBadge(el.sBinance, 'Binance: Idle', 'idle');
-      log('Loop dihentikan.');
-    }
+    eq.push(balance + (pos? (pos.side==='long'? (candles[i].close-pos.entry)*pos.qty : (pos.entry-candles[i].close)*pos.qty) : 0));
+  }
 
-    // =============================================================
-    //  INIT & UI EVENTS
-    // =============================================================
-    document.addEventListener('DOMContentLoaded', () => {
-      reflectConfig(); updateMetrics();
-      log('Bot siap. Menggunakan candle tertutup (no look-ahead). Klik Start untuk mulai.');
-      el.cfgSymbol.addEventListener('change', () => { config.symbol = el.cfgSymbol.value.trim().toUpperCase(); log('Symbol diubah ke ' + config.symbol); });
-      el.cfgInterval.addEventListener('change', () => { config.interval = el.cfgInterval.value; log('Interval diubah ke ' + config.interval); if (isRunning) { stopLoop(); startLoop(); } });
-      el.cfgEndpoint.addEventListener('change', () => { config.notify.endpoint = el.cfgEndpoint.value.trim() || '/api/notify'; log('Notify endpoint: ' + config.notify.endpoint); });
-      el.btnStart.addEventListener('click', startLoop);
-      el.btnStop.addEventListener('click', stopLoop);
-    });
-  </script>
+  // Close any open at last close
+  if(pos){
+    const last = candles[candles.length-1];
+    const exit = last.close; const pl = (pos.side==='long')? (exit-pos.entry)*pos.qty : (pos.entry-exit)*pos.qty;
+    balance += pl; trades.push({ iClose:candles.length-1, iOpen:pos.iOpen, time:last.closeTime, side:pos.side, entry:pos.entry, exit, qty:pos.qty, sl:pos.sl, tp1:pos.tp1, tp2:pos.tp2, pl }); pos=null;
+  }
+
+  const wins = trades.filter(t=>t.pl>0).length; const wr = trades.length? (wins/trades.length*100):0;
+  return {balance, equity:eq, trades, winRate:wr};
+}
+
+// ===== Tiny chart (no external libs) =====
+function drawChart(canvas, series){
+  const ctx=canvas.getContext('2d'); const w=canvas.clientWidth, h=canvas.clientHeight; canvas.width=w*2; canvas.height=h*2; ctx.scale(2,2);
+  ctx.clearRect(0,0,w,h);
+  const pad=10; const min=Math.min(...series.filter(x=>isFinite(x))); const max=Math.max(...series.filter(x=>isFinite(x)));
+  const xStep=(w-2*pad)/Math.max(1,series.length-1);
+  ctx.lineWidth=2; ctx.beginPath();
+  series.forEach((v,i)=>{
+    const x=pad+i*xStep; const y = h-pad - ( (v-min)/(max-min||1) * (h-2*pad) );
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle='#17d1ff'; ctx.stroke();
+}
+
+// ===== UI glue =====
+const els={
+  symbol:document.getElementById('symbol'), interval:document.getElementById('interval'), strategy:document.getElementById('strategy'),
+  initBalance:document.getElementById('initBalance'), riskPct:document.getElementById('riskPct'), atrMult:document.getElementById('atrMult'),
+  startBtn:document.getElementById('startBtn'), liveBtn:document.getElementById('liveBtn'), resetBtn:document.getElementById('resetBtn'),
+  statBalance:document.getElementById('statBalance'), statPL:document.getElementById('statPL'), statWR:document.getElementById('statWR'), statTrades:document.getElementById('statTrades'),
+  tradesTable:document.querySelector('#tradesTable tbody'), chart:document.getElementById('equityChart')
+}
+
+let liveTimer=null, lastState=null;
+
+function parseCfg(){
+  const [slx,tp1x,tp2x] = els.atrMult.value.split(',').map(x=>+x.trim());
+  return { symbol:els.symbol.value.trim().toUpperCase(), interval:els.interval.value, strategy:els.strategy.value,
+    initBalance:+els.initBalance.value, riskPct:+els.riskPct.value, slx, tp1x, tp2x };
+}
+
+function render(trades, equity, balance, initBalance){
+  els.tradesTable.innerHTML='';
+  trades.forEach((t,idx)=>{
+    const tr=document.createElement('tr');
+    const time=new Date(t.time).toLocaleString();
+    tr.innerHTML=`<td>${idx+1}</td><td>${time}</td><td>${t.side==='long'?'<span class="pill long">LONG</span>':'<span class="pill short">SHORT</span>'}</td>
+    <td>${fmt(t.entry)}</td><td>${fmt(t.exit)}</td><td>${fmt(t.qty,4)}</td><td>${fmt(t.sl)}</td><td>${fmt(t.tp1)}</td><td>${fmt(t.tp2)}</td>
+    <td style="color:${t.pl>=0?'#80ffd9':'#ff9aa9'}">${fmt(t.pl,4)}</td>`;
+    els.tradesTable.appendChild(tr);
+  })
+  const pl = balance - initBalance; const plPct = initBalance? (pl/initBalance*100):0;
+  els.statBalance.textContent = `${fmt(balance,2)} USDT`;
+  els.statPL.textContent = `${fmt(pl,2)} (${fmt(plPct,2)}%)`;
+  const wins = trades.filter(t=>t.pl>0).length; const wr = trades.length? (wins/trades.length*100):0;
+  els.statWR.textContent = `${fmt(wr,1)}%`;
+  els.statTrades.textContent = trades.length;
+  drawChart(els.chart, equity);
+}
+
+async function runBacktest(live=false){
+  const cfg=parseCfg();
+  const candles = await fetchKlines(cfg.symbol, cfg.interval, 1000);
+  const {sigs} = signalsFromStrategy(candles, cfg.strategy);
+  const result = backtest(candles, sigs, cfg);
+  lastState={cfg, candles, sigs, result};
+  render(result.trades, result.equity, result.balance, cfg.initBalance);
+  if(live){
+    if(liveTimer) clearInterval(liveTimer);
+    liveTimer = setInterval(async ()=>{
+      try{
+        const n = await fetchKlines(cfg.symbol, cfg.interval, 1000);
+        const {sigs} = signalsFromStrategy(n, cfg.strategy);
+        const result = backtest(n, sigs, cfg);
+        lastState={cfg, candles:n, sigs, result};
+        render(result.trades, result.equity, result.balance, cfg.initBalance);
+      }catch(e){console.error(e)}
+    }, 15_000);
+  }
+}
+
+els.startBtn.onclick = ()=> runBacktest(false);
+els.liveBtn.onclick = ()=>{
+  if(liveTimer){ clearInterval(liveTimer); liveTimer=null; els.liveBtn.textContent='⏱ Live Update (on/off)'; }
+  else { runBacktest(true); els.liveBtn.textContent='⏱ Live Update: ON'; }
+}
+els.resetBtn.onclick = ()=>{ if(liveTimer){clearInterval(liveTimer); liveTimer=null} lastState=null; els.tradesTable.innerHTML=''; drawChart(els.chart,[0,0]); els.statBalance.textContent='-'; els.statPL.textContent='-'; els.statWR.textContent='-'; els.statTrades.textContent='-'; }
+
+// Auto-run first load
+runBacktest(false).catch(console.error);
+</script>
 </body>
 </html>
