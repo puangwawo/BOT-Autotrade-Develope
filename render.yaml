@@ -1,0 +1,12 @@
+
+services:
+  - type: web
+    name: liquidation-backend
+    env: docker
+    rootDir: backend
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8080
